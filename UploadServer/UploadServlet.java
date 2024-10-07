@@ -10,11 +10,13 @@ public class UploadServlet extends HttpServlet {
          while( ( bytesRead = in.read( content ) ) != -1 ) {  
             baos.write( content, 0, bytesRead );  
          }
+         
          Clock clock = Clock.systemDefaultZone();
          long milliSeconds=clock.millis();
          OutputStream outputStream = new FileOutputStream(new File(String.valueOf(milliSeconds) + ".png"));
          baos.writeTo(outputStream);
          outputStream.close();
+         
          PrintWriter out = new PrintWriter(response.getOutputStream(), true);
          File dir = new File(".");
          String[] chld = dir.list();
