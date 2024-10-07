@@ -30,16 +30,11 @@ public class Activity {
         // String caption = "Sample Image";
         // String date = "2024-10-05"; // Date format as per requirement
         // File file = new File("AndroidLogo.png"); // Ensure the file exists
-        File file = new File(filename); // Ensure the file exists
 
-        System.out.println(caption + date + filename);
-
-        AsyncTask uploadAsyncTask = new UploadAsyncTask(caption, date, file).execute();
+        AsyncTask uploadAsyncTask = new UploadAsyncTask().execute();
         System.out.println("Waiting for Callback");
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-            br.readLine();
-            br.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

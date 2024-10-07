@@ -28,19 +28,28 @@
 // }
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.*;
 import java.nio.file.Files;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 public class UploadClient {
     private String caption;
     private String date;
     private File file;
-
-    public UploadClient(String caption, String date, File file) {
-        this.caption = caption;
-        this.date = date;
-        this.file = file;
+    public UploadClient() {
+        try {
+            System.out.println("Enter your image caption: ");
+            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            caption = br.readLine();
+            date = Instant.now().atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_LOCAL_DATE);
+            System.out.println("Enter the path of the file you want to upload: ");
+            String imagePath = br.readLine();
+            file = new File(imagePath);
+        } catch (Exception e) {
+            System.err.println(e);
+        }
     }
 
     public String uploadFile() {
@@ -49,58 +58,82 @@ public class UploadClient {
         String response = "";
 
         try {
-            System.out.println("before connection. Caption: " + caption + ", Date: " + date + ", Filename: " + file.getName());
-            URL url = new URL("http://localhost:8081/upload/upload"); // Update the URL to point to your servlet
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            System.out.println("after connection");
-            connection.setDoOutput(true);
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            String hostname = "localhost:8081";
+            String path = "/upload/upload";
+            Socket socket = new Socket("localhost", 8081);
+            OutputStream out = socket.getOutputStream();
+
+            // Form fields
+            String formFieldPart = "--" + boundary + "\r\n" +
+                "Content-Disposition: form-data; name=\"caption\"\r\n\r\n" + caption +"\r\n" +
+                "--" + boundary + "\r\n" +
+                "Content-Disposition: form-data; name=\"date\"\r\n\r\n" +
+                date +"\r\n";
+
+            // Start of the file part
+            String fileHeaderPart = "--" + boundary + "\r\n" +
+                "Content-Disposition: form-data; name=\"File\"; filename=\"" + file.getName() + "\"\r\n" +
+                "Content-Type: " + Files.probeContentType(file.toPath()) + "\r\n\r\n";
+
+            // End of the multipart form data
+            String closingBoundary = "\r\n--" + boundary + "--\r\n";
+
+
+            // Calculate Content-Length
+            long contentLength = formFieldPart.length() + fileHeaderPart.length() + file.length() + closingBoundary.length();
             
-            DataOutputStream dos = new DataOutputStream(connection.getOutputStream());
+            BufferedWriter dos = new BufferedWriter(new OutputStreamWriter(out, "UTF-8"));
+
+            // Write the POST request headers
+            dos.write("POST " + path + " HTTP/1.1\r\n");
+            dos.write("Host: " + hostname + "\r\n");
+            dos.write("Content-Type: multipart/form-data; boundary=" + boundary + "\r\n");
+            dos.write("Content-Length: " + contentLength + "\r\n");
+            dos.write("Connection: close\r\n");
+            dos.write("\r\n");  // End of headers
+            dos.flush();
 
             // Add caption field
-            dos.writeBytes("--" + boundary + lineEnd);
-            dos.writeBytes("Content-Disposition: form-data; name=\"caption\"" + lineEnd);
-            dos.writeBytes(lineEnd);
-            dos.writeBytes(caption + lineEnd);
+            dos.write("--" + boundary + lineEnd);
+            dos.write("Content-Disposition: form-data; name=\"caption\"" + lineEnd);
+            dos.write(lineEnd);
+            dos.write(caption + lineEnd);
 
             // Add date field
-            dos.writeBytes("--" + boundary + lineEnd);
-            dos.writeBytes("Content-Disposition: form-data; name=\"date\"" + lineEnd);
-            dos.writeBytes(lineEnd);
-            dos.writeBytes(date + lineEnd);
+            dos.write("--" + boundary + lineEnd);
+            dos.write("Content-Disposition: form-data; name=\"date\"" + lineEnd);
+            dos.write(lineEnd);
+            dos.write(date + lineEnd);
 
             // Add file
-            dos.writeBytes("--" + boundary + lineEnd);
-            dos.writeBytes("Content-Disposition: form-data; name=\"fileName\"; filename=\"" + file.getName() + "\"" + lineEnd);
-            dos.writeBytes("Content-Type: " + Files.probeContentType(file.toPath()) + lineEnd); // Determine content type
-            dos.writeBytes(lineEnd);
+            dos.write("--" + boundary + lineEnd);
+            dos.write("Content-Disposition: form-data; name=\"fileName\"; filename=\"" + file.getName() + "\"" + lineEnd);
+            dos.write("Content-Type: " + Files.probeContentType(file.toPath()) + lineEnd); // Determine content type
+            dos.write(lineEnd);
 
             // Read file data
             FileInputStream fileInputStream = new FileInputStream(file);
             byte[] buffer = new byte[4096];
             int bytesRead;
             while ((bytesRead = fileInputStream.read(buffer)) != -1) {
-                dos.write(buffer, 0, bytesRead);
+                out.write(buffer, 0, bytesRead);
             }
             fileInputStream.close();
             
-            dos.writeBytes(lineEnd);
-            dos.writeBytes("--" + boundary + "--" + lineEnd);
+            dos.write(lineEnd);
+            dos.write("--" + boundary + "--" + lineEnd);
             dos.flush();
             dos.close();
 
             // Read the server response
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            StringBuilder responseBuilder = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                responseBuilder.append(line).append("\n");
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            socket.shutdownOutput();
+            String htmlLineString = "";
+            while ((htmlLineString = in.readLine()) != null) {
+                response += htmlLineString + "\n";
             }
-            reader.close();
-
-            response = responseBuilder.toString();
+            socket.shutdownInput();
+            socket.close();
 
         } catch (Exception e) {
             System.err.println(e);
