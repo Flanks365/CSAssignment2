@@ -49,8 +49,10 @@ public class UploadClient {
         String response = "";
 
         try {
-            URL url = new URL("http://localhost:8081/upload"); // Update the URL to point to your servlet
+            System.out.println("before connection. Caption: " + caption + ", Date: " + date + ", Filename: " + file.getName());
+            URL url = new URL("http://localhost:8081/upload/upload"); // Update the URL to point to your servlet
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            System.out.println("after connection");
             connection.setDoOutput(true);
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
@@ -103,6 +105,7 @@ public class UploadClient {
         } catch (Exception e) {
             System.err.println(e);
         }
+        System.out.println("UploadClient returning");
         return response;
     }
 }

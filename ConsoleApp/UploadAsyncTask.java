@@ -7,6 +7,8 @@
 //    }  
 // }
 
+import java.io.*;
+
 public class UploadAsyncTask extends AsyncTask {
     private String caption;
     private String date;
@@ -20,6 +22,7 @@ public class UploadAsyncTask extends AsyncTask {
 
     protected void onPostExecute(String result) {
         System.out.println(result);
+        System.out.println("post execute");
     }
 
     protected String doInBackground() {

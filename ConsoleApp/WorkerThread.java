@@ -1,11 +1,13 @@
 public class WorkerThread extends Thread {
    private AsyncTask aTask = null;
+
    public WorkerThread(AsyncTask asyncTask) {
       this.aTask = asyncTask;
    }
+
    public void run() {
-       String result = aTask.doInBackground();
-       aTask.onPostExecute(result);
-       
+      String result = aTask.doInBackground();
+      aTask.onPostExecute(result);
+      System.out.println("WorkerThread run() complete");
    }
 }
