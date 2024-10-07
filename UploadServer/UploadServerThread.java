@@ -1,33 +1,62 @@
+// import java.net.*;
+// import java.io.*;
+// import java.time.Clock;
+// public class UploadServerThread extends Thread {
+//    private Socket socket = null;
+//    public UploadServerThread(Socket socket) {
+//       super("DirServerThread");
+//       this.socket = socket;
+//    }
+//    public void run() {
+//       try {
+//          InputStream in = socket.getInputStream(); 
+//          HttpServletRequest req = new HttpServletRequest(in);  
+//          OutputStream baos = new ByteArrayOutputStream(); 
+//          HttpServletResponse res = new HttpServletResponse(baos); 
+//          HttpServlet httpServlet = new UploadServlet();
+//          httpServlet.doPost(req, res);
+//          OutputStream out = socket.getOutputStream(); 
+//          out.write(((ByteArrayOutputStream) baos).toByteArray());
+//          socket.close();
+//       } catch (Exception e) { e.printStackTrace(); }
+//    }
+// }
+
 import java.net.*;
 import java.io.*;
 import java.util.StringTokenizer;
+
 
 public class UploadServerThread extends Thread {
     private Socket socket = null;
 
     public UploadServerThread(Socket socket) {
-        super("UploadServerThread");
+        super("DirServerThread");
         this.socket = socket;
     }
 
     public void run() {
+      OutputStream out = socket.getOutputStream();
         try {
-            InputStream in = socket.getInputStream();
-            OutputStream out = socket.getOutputStream();
-
-            // Read the HTTP request
+            // Use BufferedInputStream to read the request
+            BufferedInputStream in = new BufferedInputStream(socket.getInputStream());
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            String initialLine = reader.readLine();
+            
+            // Read the first line of the request
+            String requestLine = reader.readLine();
+            if (requestLine != null) {
+                String[] requestParts = requestLine.split(" ");
+                String method = requestParts[0];
+                String uri = requestParts[1];
 
-            if (initialLine == null) return;
+                HttpServletRequest req = new HttpServletRequest(in);
+                OutputStream baos = new ByteArrayOutputStream();
+                HttpServletResponse res = new HttpServletResponse(baos);
+                HttpServlet httpServlet = new UploadServlet();
 
-            StringTokenizer tokenizer = new StringTokenizer(initialLine);
-            String method = tokenizer.nextToken(); // GET or POST
-            String path = tokenizer.nextToken();
-
-            // Handle GET request for the HTML form
-            if (method.equals("GET")) {
-                // Serve the HTML file
+                // Check the HTTP method
+                if ("GET".equalsIgnoreCase(method) && "/".equals(uri)) {
+                    // Serve the HTML file
                 File htmlFile = new File("Form.html");
                 FileInputStream fileInputStream = new FileInputStream(htmlFile);
                 String content = "HTTP/1.1 200 OK\r\n" +
@@ -41,37 +70,21 @@ public class UploadServerThread extends Thread {
                     out.write(buffer, 0, bytesRead);
                 }
                 fileInputStream.close();
-            }
-            // Handle POST request for file upload
-            else if (method.equals("POST")) {
-                // Read the request body into a ByteArrayOutputStream
-                ByteArrayOutputStream requestBody = new ByteArrayOutputStream();
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = in.read(buffer)) != -1) {
-                    requestBody.write(buffer, 0, bytesRead);
+                } else if ("POST".equalsIgnoreCase(method)) {
+                    httpServlet.doPost(req, res);
+                } else {
+                    // Handle unsupported methods
+                    res.getOutputStream().write("HTTP/1.1 405 Method Not Allowed\r\n\r\n".getBytes());
                 }
 
-                // Create HttpServletRequest and HttpServletResponse objects
-                HttpServletRequest req = new HttpServletRequest(new ByteArrayInputStream(requestBody.toByteArray()));
-                HttpServletResponse res = new HttpServletResponse(out);
-
-                // Create the servlet instance
-                UploadServlet servlet = new UploadServlet();
-
-                // Call the servlet's doPost method
-                servlet.doPost(req, res);
-            }
-
-            out.flush();
-        } catch (IOException e) {
-            System.err.println("Error handling request: " + e.getMessage());
-        } finally {
-            try {
+                // Send the response back to the client
+                OutputStream out = socket.getOutputStream();
+                out.write(((ByteArrayOutputStream) baos).toByteArray());
+                out.flush();
                 socket.close();
-            } catch (IOException e) {
-                System.err.println("Could not close socket: " + e.getMessage());
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
