@@ -1,5 +1,4 @@
-// import java.io.*;
-// import java.net.*;
+
 // public class UploadClient {
 //     public UploadClient() { }
 //     public String uploadFile() {
@@ -77,7 +76,6 @@ public class UploadClient {
 
             // End of the multipart form data
             String closingBoundary = "\r\n--" + boundary + "--\r\n";
-
 
             // Calculate Content-Length
             long contentLength = formFieldPart.length() + fileHeaderPart.length() + file.length() + closingBoundary.length();
