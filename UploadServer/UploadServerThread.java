@@ -36,20 +36,29 @@ public class UploadServerThread extends Thread {
     }
 
     public void run() {
-      OutputStream out = socket.getOutputStream();
+    
         try {
+            OutputStream out = socket.getOutputStream();
             // Use BufferedInputStream to read the request
             BufferedInputStream in = new BufferedInputStream(socket.getInputStream());
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            
+
             // Read the first line of the request
             String requestLine = reader.readLine();
             if (requestLine != null) {
                 String[] requestParts = requestLine.split(" ");
                 String method = requestParts[0];
                 String uri = requestParts[1];
-
+                String boundary = "";
+                String temp;
+                while ((temp = reader.readLine()) != "\r\n\r\n") {
+                    if (temp.contains("boundary=")) {
+                        boundary = temp.substring(temp.indexOf("boundary=") + 9);
+                        break;   
+                    } 
+                }
                 HttpServletRequest req = new HttpServletRequest(in);
+                req.setBoundary(boundary);
                 OutputStream baos = new ByteArrayOutputStream();
                 HttpServletResponse res = new HttpServletResponse(baos);
                 HttpServlet httpServlet = new UploadServlet();
@@ -78,7 +87,6 @@ public class UploadServerThread extends Thread {
                 }
 
                 // Send the response back to the client
-                OutputStream out = socket.getOutputStream();
                 out.write(((ByteArrayOutputStream) baos).toByteArray());
                 out.flush();
                 socket.close();

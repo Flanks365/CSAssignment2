@@ -57,25 +57,26 @@ public class UploadClient {
         String response = "";
 
         try {
-            String hostname = "localhost:8081";
+            String host = "localhost";
+            int port = 8999;
             String path = "/upload/upload";
-            Socket socket = new Socket("localhost", 8081);
+            Socket socket = new Socket(host, port);
             OutputStream out = socket.getOutputStream();
 
             // Form fields
-            String formFieldPart = "--" + boundary + "\r\n" +
+            String formFieldPart = boundary + "\r\n" +
                 "Content-Disposition: form-data; name=\"caption\"\r\n\r\n" + caption +"\r\n" +
-                "--" + boundary + "\r\n" +
+                  boundary + "\r\n" +
                 "Content-Disposition: form-data; name=\"date\"\r\n\r\n" +
                 date +"\r\n";
 
             // Start of the file part
-            String fileHeaderPart = "--" + boundary + "\r\n" +
+            String fileHeaderPart = boundary + "\r\n" +
                 "Content-Disposition: form-data; name=\"File\"; filename=\"" + file.getName() + "\"\r\n" +
                 "Content-Type: " + Files.probeContentType(file.toPath()) + "\r\n\r\n";
 
             // End of the multipart form data
-            String closingBoundary = "\r\n--" + boundary + "--\r\n";
+            String closingBoundary = "\r\n" + boundary + "\r\n";
 
             // Calculate Content-Length
             long contentLength = formFieldPart.length() + fileHeaderPart.length() + file.length() + closingBoundary.length();
@@ -84,7 +85,7 @@ public class UploadClient {
 
             // Write the POST request headers
             dos.write("POST " + path + " HTTP/1.1\r\n");
-            dos.write("Host: " + hostname + "\r\n");
+            dos.write("Host: " + host + ":"+ port+ "\r\n");
             dos.write("Content-Type: multipart/form-data; boundary=" + boundary + "\r\n");
             dos.write("Content-Length: " + contentLength + "\r\n");
             dos.write("Connection: close\r\n");
@@ -92,19 +93,19 @@ public class UploadClient {
             dos.flush();
 
             // Add caption field
-            dos.write("--" + boundary + lineEnd);
+            dos.write(boundary + lineEnd);
             dos.write("Content-Disposition: form-data; name=\"caption\"" + lineEnd);
             dos.write(lineEnd);
             dos.write(caption + lineEnd);
 
             // Add date field
-            dos.write("--" + boundary + lineEnd);
+            dos.write(boundary + lineEnd);
             dos.write("Content-Disposition: form-data; name=\"date\"" + lineEnd);
             dos.write(lineEnd);
             dos.write(date + lineEnd);
 
             // Add file
-            dos.write("--" + boundary + lineEnd);
+            dos.write(boundary + lineEnd);
             dos.write("Content-Disposition: form-data; name=\"fileName\"; filename=\"" + file.getName() + "\"" + lineEnd);
             dos.write("Content-Type: " + Files.probeContentType(file.toPath()) + lineEnd); // Determine content type
             dos.write(lineEnd);
@@ -119,7 +120,7 @@ public class UploadClient {
             fileInputStream.close();
             
             dos.write(lineEnd);
-            dos.write("--" + boundary + "--" + lineEnd);
+            dos.write(boundary + lineEnd);
             dos.flush();
             dos.close();
 
