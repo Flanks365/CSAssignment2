@@ -51,11 +51,13 @@ public class UploadServerThread extends Thread {
                 String uri = requestParts[1];
                 String boundary = "";
                 String temp;
-                while ((temp = reader.readLine()) != "\r\n\r\n") {
-                    if (temp.contains("boundary=")) {
-                        boundary = temp.substring(temp.indexOf("boundary=") + 9);
-                        break;   
-                    } 
+                if ("POST".equalsIgnoreCase(method)) {
+                    while ((temp = reader.readLine()) != "\r\n\r\n") {
+                        if (temp.contains("boundary=")) {
+                            boundary = temp.substring(temp.indexOf("boundary=") + 9);
+                            break;   
+                        } 
+                    }
                 }
                 HttpServletRequest req = new HttpServletRequest(in);
                 req.setBoundary(boundary);
@@ -64,7 +66,7 @@ public class UploadServerThread extends Thread {
                 HttpServlet httpServlet = new UploadServlet();
 
                 // Check the HTTP method
-                if ("GET".equalsIgnoreCase(method) && "/".equals(uri)) {
+                if ("GET".equalsIgnoreCase(method)) {
                     // Serve the HTML file
                 File htmlFile = new File("Form.html");
                 FileInputStream fileInputStream = new FileInputStream(htmlFile);

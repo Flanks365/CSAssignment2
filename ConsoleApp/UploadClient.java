@@ -1,31 +1,3 @@
-
-// public class UploadClient {
-//     public UploadClient() { }
-//     public String uploadFile() {
-//         String listing = "";
-//         try {
-//             Socket socket = new Socket("localhost", 8999);
-//             BufferedReader in = new BufferedReader(
-//                 new InputStreamReader(socket.getInputStream()));
-//             OutputStream out = socket.getOutputStream();
-//             FileInputStream fis = new FileInputStream("AndroidLogo.png");
-//             byte[] bytes = fis.readAllBytes();
-//             out.write(bytes);
-//             socket.shutdownOutput();
-//             fis.close();
-//             System.out.println("Came this far\n");
-//             String filename = "";
-//             while ((filename = in.readLine()) != null) {
-//                 listing += filename;
-//             }
-//             socket.shutdownInput();
-//         } catch (Exception e) {
-//             System.err.println(e);
-//         }
-//         return listing;
-//     }
-// }
-
 import java.io.*;
 import java.net.*;
 import java.nio.file.Files;
@@ -37,6 +9,7 @@ public class UploadClient {
     private String caption;
     private String date;
     private File file;
+
     public UploadClient() {
         try {
             System.out.println("Enter your image caption: ");
@@ -63,54 +36,51 @@ public class UploadClient {
             Socket socket = new Socket(host, port);
             OutputStream out = socket.getOutputStream();
 
-            // Form fields
-            String formFieldPart = boundary + "\r\n" +
-                "Content-Disposition: form-data; name=\"caption\"\r\n\r\n" + caption +"\r\n" +
-                  boundary + "\r\n" +
-                "Content-Disposition: form-data; name=\"date\"\r\n\r\n" +
-                date +"\r\n";
+            // Start of the multipart body
+            StringBuilder formFieldPart = new StringBuilder();
+            formFieldPart.append("--").append(boundary).append(lineEnd)
+                    .append("Content-Disposition: form-data; name=\"caption\"").append(lineEnd)
+                    .append(lineEnd)
+                    .append(caption).append(lineEnd)
+                    .append("--").append(boundary).append(lineEnd)
+                    .append("Content-Disposition: form-data; name=\"date\"").append(lineEnd)
+                    .append(lineEnd)
+                    .append(date).append(lineEnd);
 
-            // Start of the file part
-            String fileHeaderPart = boundary + "\r\n" +
-                "Content-Disposition: form-data; name=\"File\"; filename=\"" + file.getName() + "\"\r\n" +
-                "Content-Type: " + Files.probeContentType(file.toPath()) + "\r\n\r\n";
+            // File header
+            StringBuilder fileHeaderPart = new StringBuilder();
+            fileHeaderPart.append("--").append(boundary).append(lineEnd)
+                    .append("Content-Disposition: form-data; name=\"file\"; filename=\"")
+                    .append(file.getName()).append("\"").append(lineEnd)
+                    .append("Content-Type: ").append(Files.probeContentType(file.toPath())).append(lineEnd)
+                    .append(lineEnd);
 
-            // End of the multipart form data
-            String closingBoundary = "\r\n" + boundary + "\r\n";
+            // Closing boundary
+            String closingBoundary = "--" + boundary + "--" + lineEnd;
 
-            // Calculate Content-Length
-            long contentLength = formFieldPart.length() + fileHeaderPart.length() + file.length() + closingBoundary.length();
-            
+            // Calculate Content-Length (form data + file + closing boundary)
+            long contentLength = formFieldPart.length() + fileHeaderPart.length() + file.length()
+                    + closingBoundary.length();
+
             BufferedWriter dos = new BufferedWriter(new OutputStreamWriter(out, "UTF-8"));
 
             // Write the POST request headers
             dos.write("POST " + path + " HTTP/1.1\r\n");
-            dos.write("Host: " + host + ":"+ port+ "\r\n");
+            dos.write("Host: " + host + ":" + port + "\r\n");
             dos.write("Content-Type: multipart/form-data; boundary=" + boundary + "\r\n");
             dos.write("Content-Length: " + contentLength + "\r\n");
             dos.write("Connection: close\r\n");
-            dos.write("\r\n");  // End of headers
+            dos.write("\r\n"); // End of headers
             dos.flush();
 
-            // Add caption field
-            dos.write(boundary + lineEnd);
-            dos.write("Content-Disposition: form-data; name=\"caption\"" + lineEnd);
-            dos.write(lineEnd);
-            dos.write(caption + lineEnd);
+            // Write form fields (caption, date)
+            dos.write(formFieldPart.toString());
 
-            // Add date field
-            dos.write(boundary + lineEnd);
-            dos.write("Content-Disposition: form-data; name=\"date\"" + lineEnd);
-            dos.write(lineEnd);
-            dos.write(date + lineEnd);
+            // Write file header
+            dos.write(fileHeaderPart.toString());
+            dos.flush();
 
-            // Add file
-            dos.write(boundary + lineEnd);
-            dos.write("Content-Disposition: form-data; name=\"fileName\"; filename=\"" + file.getName() + "\"" + lineEnd);
-            dos.write("Content-Type: " + Files.probeContentType(file.toPath()) + lineEnd); // Determine content type
-            dos.write(lineEnd);
-
-            // Read file data
+            // Write file content
             FileInputStream fileInputStream = new FileInputStream(file);
             byte[] buffer = new byte[4096];
             int bytesRead;
@@ -118,9 +88,10 @@ public class UploadClient {
                 out.write(buffer, 0, bytesRead);
             }
             fileInputStream.close();
-            
+
+            // Write closing boundary
             dos.write(lineEnd);
-            dos.write(boundary + lineEnd);
+            dos.write(closingBoundary);
             dos.flush();
             dos.close();
 

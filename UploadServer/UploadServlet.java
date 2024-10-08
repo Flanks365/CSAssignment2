@@ -1,101 +1,108 @@
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 
 public class UploadServlet extends HttpServlet {
    protected void doPost(HttpServletRequest request, HttpServletResponse response) {
       try {
-         InputStream in = request.getInputStream();   
-         BufferedInputStream bin = new BufferedInputStream(in);
-         BufferedReader reader = new BufferedReader(new InputStreamReader(bin));
+         // Get boundary string
+         String boundaryString = request.getBoundary();
+         System.out.println("Boundary: " + boundaryString);
+
+         // Convert boundary to byte array for comparison
+         byte[] boundaryBytes = ("--" + boundaryString).getBytes("UTF-8");
+
+         // InputStream for reading the raw data
+         InputStream in = request.getInputStream();
+         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+         byte[] data = new byte[4096];
+         int bytesRead;
+
+         // Read the entire request body into a buffer
+         while ((bytesRead = in.read(data)) != -1) {
+            buffer.write(data, 0, bytesRead);
+         }
+
+         byte[] requestBody = buffer.toByteArray();
+         int boundaryPosition = findBoundaryPosition(requestBody, boundaryBytes, 0);
+         if (boundaryPosition == -1) {
+            throw new Exception("Boundary not found in the request body");
+         }
+
+         // Parse the multipart content
+         int position = boundaryPosition + boundaryBytes.length + 2; // Skip past boundary
+
          String caption = "";
          String date = "";
          String filename = "";
-         String temp = "";
-         while ((temp = reader.readLine()) != null) {
-            if (temp.contains("caption")) {
-               while (caption.equals("")) {
-                  caption = reader.readLine();
-                  caption = caption.replace("\r\n", "");
-               }
+
+         while (position < requestBody.length) {
+            // Read the headers of the next part
+            int partHeaderEnd = findBoundaryPosition(requestBody, "\r\n\r\n".getBytes("UTF-8"), position);
+            if (partHeaderEnd == -1)
+               break;
+
+            String partHeader = new String(requestBody, position, partHeaderEnd - position, "UTF-8");
+            position = partHeaderEnd + 4; // Skip past header
+
+            // Check if it's the caption or date field
+            if (partHeader.contains("name=\"caption\"")) {
+               int partEnd = findBoundaryPosition(requestBody, boundaryBytes, position);
+               caption = new String(requestBody, position, partEnd - position - 2, "UTF-8"); // -2 to skip trailing \r\n
                System.out.println("Caption: " + caption);
-            }
-            if (temp.contains("date")) {
-               while (date.equals("")) {
-                  date = reader.readLine();
-                  date = date.replace("\r\n", "");
-               }
+               position = partEnd + boundaryBytes.length + 2;
+            } else if (partHeader.contains("name=\"date\"")) {
+               int partEnd = findBoundaryPosition(requestBody, boundaryBytes, position);
+               date = new String(requestBody, position, partEnd - position - 2, "UTF-8");
+               position = partEnd + boundaryBytes.length + 2;
                System.out.println("Date: " + date);
-            }
-            if (temp.contains("filename=")) {
-               filename = temp.substring(temp.indexOf("filename=") + 9);
-               filename = filename.replace("\"", "");
-               System.out.println("Filename: " + filename);
+            } else if (partHeader.contains("filename=")) {
+               filename = extractFilename(partHeader);
+
+               // Read the file content
+               int fileDataEnd = findBoundaryPosition(requestBody, boundaryBytes, position);
+               byte[] fileData = new byte[fileDataEnd - position - 2]; // -2 to remove trailing \r\n
+               System.arraycopy(requestBody, position, fileData, 0, fileData.length);
+               position = fileDataEnd + boundaryBytes.length + 2;
+               System.out.println("File received: " + filename);
+
+               // Save the file to disk
+               String saveFileName = filename.replace("\"","") + "_" + caption + "_" + date + ".jpeg";
+               try (FileOutputStream fos = new FileOutputStream(saveFileName)) {
+                  fos.write(fileData);
+                  System.out.println("File saved as: " + saveFileName);
+               }
             }
          }
-
-         String boundaryString = request.getBoundary();
-         System.out.println("Boundary: " + boundaryString);
-         // Convert the boundary string into bytes
-         byte[] boundaryBytes = boundaryString.getBytes();
-
-         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-         int nRead;
-         byte[] data = new byte[1];
-
-         while ((nRead = bin.read(data, 0, data.length)) != -1) {
-            buffer.write(data, 0, nRead);
-         }
-
-         buffer.flush();
-         byte[] array = buffer.toByteArray();
-
-         System.out.println("Array Length: " + array.length);
-         System.out.println("Array: " + new String(array));
-         System.out.println("Boundary Bytes: " + new String(boundaryBytes));
-         // Find the boundary in the input stream
-         int boundaryPosition = indexOf(array, boundaryBytes);
-         System.out.println("Boundary Position: " + boundaryPosition);
-
-         if (boundaryPosition != -1) {
-            // Extract the JPEG data (up to the boundary)
-            byte[] jpegData = new byte[boundaryPosition];
-            System.out.println("Byte Array: ");
-            String strArr = new String(array);
-            System.out.println(strArr);
-            System.arraycopy(array, 0, jpegData, 0, boundaryPosition);
-
-            // Write the extracted JPEG data to a file
-            String newfileName = filename + caption + date;
-            try (FileOutputStream outputStream = new FileOutputStream(newfileName + ".jpeg")) {
-               outputStream.write(jpegData);
-               String str = new String(jpegData);
-               System.out.println("JPEG Data: ");
-               System.out.println(str);
-               outputStream.close();
-            }
-         }  else {
-            System.out.println("Boundary not found in the stream.");
-         }
-
-      } catch(Exception ex) {
+      } catch (Exception ex) {
          System.err.println(ex);
       }
    }
-   // Helper method to find the index of the boundary in the byte array
-   private static int indexOf(byte[] data, byte[] pattern) {
-      for (int i = 0; i <= data.length - pattern.length; i++) {
-            boolean found = true;
-            for (int j = 0; j < pattern.length; j++) {
-               if (data[i + j] != pattern[j]) {
-                  found = false;
-                  break;
-               }
+
+   // Helper method to find the position of a boundary or substring in a byte array
+   private int findBoundaryPosition(byte[] data, byte[] boundary, int start) {
+      for (int i = start; i <= data.length - boundary.length; i++) {
+         boolean found = true;
+         for (int j = 0; j < boundary.length; j++) {
+            if (data[i + j] != boundary[j]) {
+               found = false;
+               break;
             }
-            if (found) {
-               return i;
-            }
+         }
+         if (found) {
+            return i;
+         }
       }
       return -1;
    }
- 
+
+   // Helper method to extract the filename from the Content-Disposition header
+   private String extractFilename(String contentDisposition) {
+      String filenameKey = "filename=";
+      int startIndex = contentDisposition.indexOf(filenameKey) + filenameKey.length();
+      int endIndex = contentDisposition.indexOf("\"", startIndex + 1);
+      if (startIndex > 0 && endIndex > 0) {
+         return contentDisposition.substring(startIndex, endIndex);
+      }
+      return null;
+   }
+
 }
