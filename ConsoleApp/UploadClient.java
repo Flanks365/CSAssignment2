@@ -32,7 +32,7 @@ public class UploadClient {
         try {
             String host = "localhost";
             int port = 8999;
-            String path = "/upload/upload";
+            String path = "/";
             Socket socket = new Socket(host, port);
             OutputStream out = socket.getOutputStream();
 
@@ -72,6 +72,7 @@ public class UploadClient {
             dos.write("Connection: close\r\n");
             dos.write("\r\n"); // End of headers
             dos.flush();
+            out.flush();
 
             // Write form fields (caption, date)
             dos.write(formFieldPart.toString());
@@ -79,6 +80,7 @@ public class UploadClient {
             // Write file header
             dos.write(fileHeaderPart.toString());
             dos.flush();
+            out.flush();
 
             // Write file content
             FileInputStream fileInputStream = new FileInputStream(file);
@@ -86,6 +88,7 @@ public class UploadClient {
             int bytesRead;
             while ((bytesRead = fileInputStream.read(buffer)) != -1) {
                 out.write(buffer, 0, bytesRead);
+                out.flush();
             }
             fileInputStream.close();
 
@@ -93,6 +96,7 @@ public class UploadClient {
             dos.write(lineEnd);
             dos.write(closingBoundary);
             dos.flush();
+            out.flush();
             dos.close();
 
             // Read the server response

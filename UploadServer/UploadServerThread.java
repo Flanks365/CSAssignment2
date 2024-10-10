@@ -55,7 +55,7 @@ public class UploadServerThread extends Thread {
                     while ((temp = reader.readLine()) != "\r\n\r\n") {
                         if (temp.contains("boundary=")) {
                             boundary = temp.substring(temp.indexOf("boundary=") + 9);
-                            break;   
+                            break;
                         } 
                     }
                 }

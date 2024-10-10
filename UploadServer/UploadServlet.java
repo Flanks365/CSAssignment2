@@ -34,6 +34,8 @@ public class UploadServlet extends HttpServlet {
          String date = "";
          String filename = "";
 
+         System.out.println("position: " + position);
+         System.out.println("requestBody.length: " + requestBody.length);
          while (position < requestBody.length) {
             // Read the headers of the next part
             int partHeaderEnd = findBoundaryPosition(requestBody, "\r\n\r\n".getBytes("UTF-8"), position);
@@ -65,7 +67,7 @@ public class UploadServlet extends HttpServlet {
                System.out.println("File received: " + filename);
 
                // Save the file to disk
-               String saveFileName = filename.replace("\"","") + "_" + caption + "_" + date + ".jpeg";
+               String saveFileName = filename + "_" + caption + "_" + date + ".jpeg";
                try (FileOutputStream fos = new FileOutputStream(saveFileName)) {
                   fos.write(fileData);
                   System.out.println("File saved as: " + saveFileName);
@@ -100,7 +102,7 @@ public class UploadServlet extends HttpServlet {
       int startIndex = contentDisposition.indexOf(filenameKey) + filenameKey.length();
       int endIndex = contentDisposition.indexOf("\"", startIndex + 1);
       if (startIndex > 0 && endIndex > 0) {
-         return contentDisposition.substring(startIndex, endIndex);
+         return contentDisposition.substring(startIndex, endIndex).replace("\"", "");
       }
       return null;
    }
