@@ -5,7 +5,7 @@ public class UploadServlet extends HttpServlet {
       try {
          // Get boundary string
          String boundaryString = request.getBoundary();
-         System.out.println("Boundary: " + boundaryString);
+         System.out.println("inner Boundary: " + boundaryString);
 
          // Convert boundary to byte array for comparison
          byte[] boundaryBytes = ("--" + boundaryString).getBytes("UTF-8");
@@ -74,6 +74,10 @@ public class UploadServlet extends HttpServlet {
                }
             }
          }
+         OutputStream out = response.getOutputStream();
+         String content = "HTTP/1.1 200 OK\r\n";
+         out.write(content.getBytes());
+         out.flush();
       } catch (Exception ex) {
          System.err.println(ex);
       }
