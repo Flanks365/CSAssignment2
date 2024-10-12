@@ -11,8 +11,9 @@ public class UploadServerThread extends Thread {
 
     public void run() {
         try {
+            System.out.println("Thread ID: " + Thread.currentThread().getId() + " is handling the request");
             OutputStream out = socket.getOutputStream();
-            BufferedInputStream in = new BufferedInputStream(socket.getInputStream());
+            InputStream in = socket.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
             int bytesRead;
             // Read the first line of the request (GET / POST)
@@ -37,6 +38,7 @@ public class UploadServerThread extends Thread {
                 while (!(temp = reader.readLine()).isEmpty()) {
                     if (temp.contains("boundary=")) {
                         boundary = temp.substring(temp.indexOf("boundary=") + 9);
+                        boundary = boundary.trim();
                         System.out.println("Boundary: " + boundary);
                     } else if (temp.toLowerCase().startsWith("content-length:")) {
                         contentLength = Integer.parseInt(temp.substring(16).trim());
@@ -46,7 +48,9 @@ public class UploadServerThread extends Thread {
 
                 // Cache the entire input stream into a byte array if POST request
                 if ("POST".equalsIgnoreCase(method)) {
-                    System.out.println("Reading POST body...");
+                    System.out.println("Reading POST body..." + "Thread ID: " + Thread.currentThread().getId());
+                    out.write("HTTP/1.1 200 OK\r\n".getBytes());
+                    out.flush();
                     // Only read as much as Content-Length specifies
                     byte[] requestBody = new byte[contentLength];
                     int totalBytesRead = 0;
@@ -54,6 +58,10 @@ public class UploadServerThread extends Thread {
                     while (totalBytesRead < contentLength && (bytesRead = in.read(requestBody, totalBytesRead, contentLength - totalBytesRead)) != -1) {
                         System.out.println("Bytes read: " + bytesRead);
                         totalBytesRead += bytesRead;
+                        if (in.available() == 0) {
+                            System.out.println("No more data available from input stream");
+                            break;
+                        }
                     }
                     System.out.println("after while loop");
                     // Now wrap it into a new InputStream that we can pass to HttpServletRequest

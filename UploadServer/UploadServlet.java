@@ -13,7 +13,7 @@ public class UploadServlet extends HttpServlet {
          // InputStream for reading the raw data
          InputStream in = request.getInputStream();
          ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-         byte[] data = new byte[4096];
+         byte[] data = new byte[8192];
          int bytesRead;
 
          // Read the entire request body into a buffer
@@ -75,8 +75,6 @@ public class UploadServlet extends HttpServlet {
             }
          }
          OutputStream out = response.getOutputStream();
-         String content = "HTTP/1.1 200 OK\r\n";
-         out.write(content.getBytes());
          out.flush();
       } catch (Exception ex) {
          System.err.println(ex);
