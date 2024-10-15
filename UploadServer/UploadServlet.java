@@ -6,7 +6,6 @@ public class UploadServlet extends HttpServlet {
       try {
          // Get boundary string
          String boundaryString = request.getBoundary();
-         System.out.println("inner Boundary: " + boundaryString);
 
          // Convert boundary to byte array for comparison
          byte[] boundaryBytes = ("--" + boundaryString).getBytes("UTF-8");

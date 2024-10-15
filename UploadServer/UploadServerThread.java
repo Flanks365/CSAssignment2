@@ -12,7 +12,7 @@ public class UploadServerThread extends Thread {
     public void run() {
         try {
             OutputStream out = socket.getOutputStream();
-            InputStream in = socket.getInputStream();
+            InputStream in = new BufferedInputStream(socket.getInputStream());
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
             int bytesRead;
             // Read the first line of the request (GET / POST)
@@ -49,10 +49,15 @@ public class UploadServerThread extends Thread {
                     // Only read as much as Content-Length specifies
                     byte[] requestBody = new byte[contentLength];
                     int totalBytesRead = 0;
-                    while (totalBytesRead < contentLength && (bytesRead = in.read(requestBody, totalBytesRead, contentLength - totalBytesRead)) != -1) {
-                        System.out.println("Bytes read: " + bytesRead);
+
+                    // Read the body in chunks until we reach contentLength
+                    while (totalBytesRead < contentLength) {
+                        bytesRead = in.read(requestBody, totalBytesRead, contentLength - totalBytesRead);
+                        if (bytesRead == -1) break; // End of stream
                         totalBytesRead += bytesRead;
+                        System.out.println("Bytes read: " + bytesRead);
                     }
+
                     // Now wrap it into a new InputStream that we can pass to HttpServletRequest
                     ByteArrayInputStream cachedInputStream = new ByteArrayInputStream(requestBody);
 
@@ -66,6 +71,11 @@ public class UploadServerThread extends Thread {
                     httpServlet.doPost(req, res);
 
                     // Send the response back to the client
+                    String responseHeaders = "HTTP/1.1 200 OK\r\n" +
+                                            "Content-Type: text/html\r\n" +
+                                            "Content-Length: " + baos.size() + "\r\n" +
+                                            "\r\n";
+                    out.write(responseHeaders.getBytes());
                     out.write(baos.toByteArray());
 
                 } else if ("GET".equalsIgnoreCase(method)) {
