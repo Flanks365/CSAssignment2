@@ -1,4 +1,5 @@
 import java.io.*;
+import java.nio.file.*;
 
 public class UploadServlet extends HttpServlet {
    protected void doPost(HttpServletRequest request, HttpServletResponse response) {
@@ -64,10 +65,14 @@ public class UploadServlet extends HttpServlet {
                byte[] fileData = new byte[fileDataEnd - position - 2]; // -2 to remove trailing \r\n
                System.arraycopy(requestBody, position, fileData, 0, fileData.length);
                position = fileDataEnd + boundaryBytes.length + 2;
+               String[] tokens = filename.split("\\.(?=[^\\.]+$)");
+
+               filename = tokens[0];
+               String fileType = tokens[1];
                System.out.println("File received: " + filename);
 
                // Save the file to disk
-               String saveFileName = filename + "_" + caption + "_" + date + ".jpeg";
+               String saveFileName = ".\\images\\" + filename + "_" + caption + "_" + date + "." + fileType;
                try (FileOutputStream fos = new FileOutputStream(saveFileName)) {
                   fos.write(fileData);
                   System.out.println("File saved as: " + saveFileName);
