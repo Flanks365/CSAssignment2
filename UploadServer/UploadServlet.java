@@ -1,5 +1,5 @@
 import java.io.*;
-import java.nio.file.*;
+import java.util.Arrays;
 
 public class UploadServlet extends HttpServlet {
    protected void doPost(HttpServletRequest request, HttpServletResponse response) {
@@ -79,8 +79,35 @@ public class UploadServlet extends HttpServlet {
                }
             }
          }
+
          OutputStream out = response.getOutputStream();
+         // Send the response headers
+         out.write("HTTP/1.1 200 OK\r\n".getBytes());
+         out.write("Content-Type: text/html\r\n".getBytes());
+         double contentLength = 0;
+         String topPart = "<!DOCTYPE html><html><body><ul>";
+         String bottomPart = "</ul></body></html>";
+         contentLength = topPart.length() + bottomPart.length();
+
+         String middlePart = "";
+         File dir = new File(".\\images");
+         String[] chld = dir.list();
+         Arrays.sort(chld);
+            for(int i = 0; i < chld.length; i++){
+               String fileName = "<li>"+chld[i]+"</li>";
+               middlePart += fileName;
+               System.out.println(chld[i]);
+         }
+         contentLength += middlePart.length();
+         out.write(("Content-Length: " + contentLength + "\r\n").getBytes());
+         out.write("\r\n".getBytes());
          out.flush();
+
+         out.write(topPart.getBytes());
+         out.write(middlePart.getBytes());
+         out.write(bottomPart.getBytes());
+         out.flush();
+
       } catch (Exception ex) {
          System.err.println(ex);
       }

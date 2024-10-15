@@ -11,7 +11,6 @@ public class UploadServerThread extends Thread {
 
     public void run() {
         try {
-            System.out.println("Thread ID: " + Thread.currentThread().getId() + " is handling the request");
             OutputStream out = socket.getOutputStream();
             InputStream in = socket.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
@@ -34,7 +33,6 @@ public class UploadServerThread extends Thread {
                 int contentLength = -1;
 
                 // Read headers
-                System.out.println("Reading headers...");
                 while (!(temp = reader.readLine()).isEmpty()) {
                     if (temp.contains("boundary=")) {
                         boundary = temp.substring(temp.indexOf("boundary=") + 9);
@@ -48,13 +46,9 @@ public class UploadServerThread extends Thread {
 
                 // Cache the entire input stream into a byte array if POST request
                 if ("POST".equalsIgnoreCase(method)) {
-                    System.out.println("Reading POST body..." + "Thread ID: " + Thread.currentThread().getId());
-                    out.write("HTTP/1.1 200 OK\r\n".getBytes());
-                    out.flush();
                     // Only read as much as Content-Length specifies
                     byte[] requestBody = new byte[contentLength];
                     int totalBytesRead = 0;
-                    System.out.println("before while loop");
                     while (totalBytesRead < contentLength && (bytesRead = in.read(requestBody, totalBytesRead, contentLength - totalBytesRead)) != -1) {
                         System.out.println("Bytes read: " + bytesRead);
                         totalBytesRead += bytesRead;
@@ -63,7 +57,6 @@ public class UploadServerThread extends Thread {
                             break;
                         }
                     }
-                    System.out.println("after while loop");
                     // Now wrap it into a new InputStream that we can pass to HttpServletRequest
                     ByteArrayInputStream cachedInputStream = new ByteArrayInputStream(requestBody);
 
@@ -78,6 +71,7 @@ public class UploadServerThread extends Thread {
 
                     // Send the response back to the client
                     out.write(baos.toByteArray());
+
                 } else if ("GET".equalsIgnoreCase(method)) {
                     // Serve the HTML file for GET request
                     File htmlFile = new File("Form.html");
