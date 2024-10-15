@@ -1,9 +1,21 @@
+import java.io.IOException;
+
 public class UploadAsyncTask extends AsyncTask {
    protected void onPostExecute(String result) {
       System.out.println(result);
    }
    protected String doInBackground() {
-     return new UploadClient().uploadFile();
+      String uploadFile = null;
+      try {
+         uploadFile = new UploadClient().uploadFile();
+      } catch (ReadInfoFailException e) {
+         System.err.println("ReadInfoFailException: " + e);
+     } catch (IOException e) {
+         System.err.println("IOException: " + e);
+     } catch (Exception e) {
+         System.err.println("Exception: " + e);
+     }
+     return uploadFile;
    }  
 }
 

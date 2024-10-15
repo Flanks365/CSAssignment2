@@ -10,7 +10,7 @@ public class UploadClient {
     private String date;
     private File file;
 
-    public UploadClient() {
+    public UploadClient() throws ReadInfoFailException, IOException{
         try {
             System.out.println("Enter your image caption: ");
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -19,8 +19,12 @@ public class UploadClient {
             System.out.println("Enter the path of the file you want to upload: ");
             String imagePath = br.readLine();
             file = new File(imagePath);
+        } catch (ReadInfoFailException e) {
+            System.err.println("ReadInfoFailException: " + e);
+        } catch (IOException e) {
+            System.err.println("IOException: " + e);
         } catch (Exception e) {
-            System.err.println(e);
+            System.err.println("Exception: " + e);
         }
     }
 
@@ -32,7 +36,7 @@ public class UploadClient {
         try {
             String host = "localhost";
             int port = 8999;
-            String path = "/";
+            String path = "/upload/upload";
             Socket socket = new Socket(host, port);
             OutputStream out = socket.getOutputStream();
 
@@ -72,7 +76,6 @@ public class UploadClient {
             dos.write("Connection: close\r\n");
             dos.write("\r\n"); // End of headers
             dos.flush();
-            out.flush();
 
             // Write form fields (caption, date)
             dos.write(formFieldPart.toString());
@@ -80,7 +83,6 @@ public class UploadClient {
             // Write file header
             dos.write(fileHeaderPart.toString());
             dos.flush();
-            out.flush();
 
             // Write file content
             FileInputStream fileInputStream = new FileInputStream(file);
@@ -88,7 +90,6 @@ public class UploadClient {
             int bytesRead;
             while ((bytesRead = fileInputStream.read(buffer)) != -1) {
                 out.write(buffer, 0, bytesRead);
-                out.flush();
             }
             fileInputStream.close();
 
@@ -96,7 +97,6 @@ public class UploadClient {
             dos.write(lineEnd);
             dos.write(closingBoundary);
             dos.flush();
-            out.flush();
             dos.close();
 
             // Read the server response
