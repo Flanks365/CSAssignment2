@@ -6,7 +6,7 @@ public class UploadServer {
         try {
             serverSocket = new ServerSocket(8081);
         } catch (IOException e) {
-            System.err.println("Could not listen on port: 8999.");
+            System.err.println("Could not listen on port: 8081.");
             System.exit(-1);
         }
         while (true) {
