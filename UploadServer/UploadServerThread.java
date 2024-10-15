@@ -52,10 +52,6 @@ public class UploadServerThread extends Thread {
                     while (totalBytesRead < contentLength && (bytesRead = in.read(requestBody, totalBytesRead, contentLength - totalBytesRead)) != -1) {
                         System.out.println("Bytes read: " + bytesRead);
                         totalBytesRead += bytesRead;
-                        if (in.available() == 0) {
-                            System.out.println("No more data available from input stream");
-                            break;
-                        }
                     }
                     // Now wrap it into a new InputStream that we can pass to HttpServletRequest
                     ByteArrayInputStream cachedInputStream = new ByteArrayInputStream(requestBody);
