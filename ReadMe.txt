@@ -3,7 +3,7 @@ Install the application by pulling off the Github Repo Link Below:
 https://github.com/Flanks365/CSAssignment2
 
 1. To use the application
-you want to cd or navigate into the UploadServer
+you want to cd or navigate into the UploadServer folder
 
 cd /your/virtualpath/UploadServer
 
@@ -15,10 +15,11 @@ cd /your/virtualpath/UploadServer
 4. once all files are compiled you can simply run the application
 by inputting java UploadServer in your command prompt.
 
-this should result in the console printing "listening on port 8082"
+this should result in the console printing "Waiting for connection on port 8082 to create thread"
 
 5. simply navigate to your browser and type in localhost/8082 and a simple
 HTML form will appear.
+
 
 FORM INSTRUCTIONS:
 
@@ -32,6 +33,18 @@ UploadServer
 
 4. Press Submit, now the return would be what is currently in the uploads folder in the 
 UploadServer folder and the file would be labled with the name / date / actual file name
+
+
+CONSOLE CLIENT INSTRUCTIONS:
+
+1. To use the application
+you want to cd or navigate into the ConsoleApp folder
+
+cd /your/virtualpath/UploadServer
+
+2. Run the application by inputting java Activity in your command prompt.
+
+3. Follow the prompts in the console to enter a caption and file to upload to the server.
 
 
 Work Spread:
