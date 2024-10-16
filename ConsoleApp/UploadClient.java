@@ -31,14 +31,14 @@ public class UploadClient {
         }
     }
 
-    public String uploadFile() {
+    public String uploadFile(int port) {
         String boundary = "===" + System.currentTimeMillis() + "==="; // Boundary for multipart
         String lineEnd = "\r\n";
         String response = "";
 
         try {
             String host = "localhost";
-            int port = 8999;
+            // int port = 8081;
             String path = "/upload/upload";
             Socket socket = new Socket(host, port);
             OutputStream out = socket.getOutputStream();
