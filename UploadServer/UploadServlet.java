@@ -4,7 +4,7 @@ import java.util.Arrays;
 public class UploadServlet extends HttpServlet {
    protected void doGet(HttpServletRequest request, HttpServletResponse response) {
       try {
-         System.out.println("in doGet " + request);
+         System.out.println("in doGet of original UploadServlet");
          OutputStream out = response.getOutputStream();
 
          // Serve the HTML file
@@ -30,7 +30,7 @@ public class UploadServlet extends HttpServlet {
 
    protected void doPost(HttpServletRequest request, HttpServletResponse response) {
       try {
-         System.out.println("in doPost " + request);
+         System.out.println("in doPost of original UploadServlet");
 
          InputStream in = request.getInputStream();
          ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -138,7 +138,7 @@ public class UploadServlet extends HttpServlet {
             for(int i = 0; i < chld.length; i++){
                String fileName = "<li>"+chld[i]+"</li>";
                middlePart += fileName;
-               System.out.println(chld[i]);
+               // System.out.println(chld[i]);
          }
          responseLength += middlePart.length();
          out.write(("Content-Length: " + responseLength + "\r\n").getBytes());

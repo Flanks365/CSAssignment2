@@ -15,6 +15,9 @@ public class UploadClient {
             System.out.println("Enter your image caption: ");
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             caption = br.readLine();
+            if (caption.equals("")) {
+                throw new ReadInfoFailException("Caption is empty");
+            }
             date = Instant.now().atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_LOCAL_DATE);
             System.out.println("Enter the path of the file you want to upload: ");
             String imagePath = br.readLine();
@@ -97,7 +100,7 @@ public class UploadClient {
             dos.write(lineEnd);
             dos.write(closingBoundary);
             dos.flush();
-            dos.close();
+            // dos.close();
 
             // Read the server response
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -106,9 +109,9 @@ public class UploadClient {
             while ((htmlLineString = in.readLine()) != null) {
                 response += htmlLineString + "\n";
             }
+
             socket.shutdownInput();
             socket.close();
-
         } catch (Exception e) {
             System.err.println(e);
         }

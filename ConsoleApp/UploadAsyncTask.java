@@ -7,7 +7,8 @@ public class UploadAsyncTask extends AsyncTask {
    protected String doInBackground() {
       String uploadFile = null;
       try {
-         uploadFile = new UploadClient().uploadFile();
+         UploadClient client = new UploadClient();
+         uploadFile = client.uploadFile();
       } catch (ReadInfoFailException e) {
          System.err.println("ReadInfoFailException: " + e);
      } catch (IOException e) {

@@ -1,5 +1,6 @@
 import java.net.*;
 import java.io.*;
+
 public class UploadServer {
     public static void main(String[] args) throws IOException {
         ServerSocket serverSocket = null;
@@ -10,7 +11,8 @@ public class UploadServer {
             System.exit(-1);
         }
         while (true) {
-	    new UploadServerThread(serverSocket.accept()).start();
+            System.out.println("Waiting for connection to create thread");
+            new UploadServerThread(serverSocket.accept()).start();
         }
     }
 }

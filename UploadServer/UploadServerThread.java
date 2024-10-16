@@ -10,7 +10,7 @@ public class UploadServerThread extends Thread {
    }
 
    public void run() {
-
+      System.out.println("Thread running");
       try {
          // Use BufferedInputStream to read the request
          BufferedInputStream in = new BufferedInputStream(socket.getInputStream());
@@ -29,17 +29,26 @@ public class UploadServerThread extends Thread {
             HttpServletRequest req = new HttpServletRequest(in);
             OutputStream baos = new ByteArrayOutputStream();
             HttpServletResponse res = new HttpServletResponse(baos);
-            HttpServlet httpServlet = new UploadServlet();
+
+            System.out.println("Creating UploadServlet using reflection");
+            Class<?> servletClass;
+            servletClass = Class.forName("UploadServlet");
+            HttpServlet httpServlet = (HttpServlet) servletClass.getDeclaredConstructor().newInstance();
+            // HttpServlet httpServlet = new UploadServlet();
 
             // // Check the HTTP method
             if ("GET".equalsIgnoreCase(method) && "/".equals(uri)) {
+               System.out.println("Calling UploadServlet's doGet");
                httpServlet.doGet(req, res);
             } else if ("POST".equalsIgnoreCase(method)) {
+               System.out.println("Calling UploadServlet's doPost");
                httpServlet.doPost(req, res);
             } else {
                // Handle unsupported methods
                res.getOutputStream().write("HTTP/1.1 405 Method Not Allowed\r\n\r\n".getBytes());
             }
+
+            System.out.println("Sending response to client");
 
             // Send the response back to the client
             OutputStream out = socket.getOutputStream();
