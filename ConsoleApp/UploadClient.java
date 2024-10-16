@@ -38,7 +38,7 @@ public class UploadClient {
 
         try {
             String host = "localhost";
-            int port = 8999;
+            int port = 8082;
             String path = "/upload/upload";
             Socket socket = new Socket(host, port);
             OutputStream out = socket.getOutputStream();
