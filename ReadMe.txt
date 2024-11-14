@@ -47,6 +47,17 @@ cd /your/virtualpath/UploadServer
 3. Follow the prompts in the console to enter a caption and file to upload to the server.
 
 
+C/C++ SERVER INSTRUCTIONS
+
+1. In a Cygwin terminal, navigate to ROOT/Linux/UploadServer.
+
+2. Run the command: g++ -o server *.cpp
+
+3. Run the command: ./server
+
+4. Connect to the server using a browser via localhost:8888 or another client on port 8888
+
+
 Work Spread:
 Tom,Mike,Michael,Nav,Bryan
 

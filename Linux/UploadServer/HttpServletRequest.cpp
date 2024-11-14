@@ -18,14 +18,6 @@ string HttpServletRequest::getFilename() {
     return filename;
 }
 
-// char * HttpServletRequest::getFile() {
-//     return file;
-// }
-//
-// int HttpServletRequest::getFileLength() {
-//     return fileLength;
-// }
-
 void HttpServletRequest::setCaption(string caption) {
     this->caption = caption;
 }
@@ -37,12 +29,5 @@ void HttpServletRequest::setDate(string date) {
 void HttpServletRequest::setFilename(string filename) {
     this->filename = filename;
 }
-
-// void HttpServletRequest::setFile(char *file, int fileLength) {
-//     this->file = new char[fileLength];
-// }
-//
-// void HttpServletRequest::setFileLength(int length) {
-// }
 
 

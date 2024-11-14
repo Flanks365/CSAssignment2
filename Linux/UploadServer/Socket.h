@@ -6,8 +6,8 @@ class Socket
 public:
 	Socket(int sock);
 	char* getRequest();
+	char* getRequestLine();
 	int getReqFile(char* buf, int n);
-	int getRequest(std::stringstream& is);
 	void sendResponse(char* res);
 	int getSock();
 	~Socket();

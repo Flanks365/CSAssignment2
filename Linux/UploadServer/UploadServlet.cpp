@@ -6,6 +6,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <dirent.h>
 
 using namespace std;
 
@@ -13,9 +14,7 @@ void UploadServlet::doGet(HttpServletRequest req, HttpServletResponse res) {
     cout << "in doGet" << endl;
 
     ifstream inFile("Form.html");
-
     string fileContent((istreambuf_iterator<char>(inFile)), (istreambuf_iterator<char>()));
-    cout << "inFile length: " << fileContent.length() << endl;
 
     ostringstream& os = res.getOutputStream();
     os << "HTTP/1.1 200 OK\r\n" <<
@@ -29,98 +28,35 @@ void UploadServlet::doGet(HttpServletRequest req, HttpServletResponse res) {
 void UploadServlet::doPost(HttpServletRequest req, HttpServletResponse res) {
     cout << "in doPost" << endl;
 
+    stringstream filenameStream;
+    filenameStream << req.getCaption() << "_" << req.getDate() << "_" << req.getFilename();
+
     stringstream& is = req.getInputStream();
-
     string file = is.str();
-    cout << "file length: " << file.length() << endl;
-
-    stringstream test;
-    test << req.getCaption() << req.getDate() << req.getFilename();
-    string t = test.str();
-
-    ofstream outFile{"./" + req.getFilename()};
+    string uploadsPath = "./uploads/";
+    ofstream outFile{ uploadsPath + filenameStream.str()};
     outFile << file;
     outFile.close();
 
+    stringstream htmlStream;
+    htmlStream << "<ul>";
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir (uploadsPath.c_str())) != NULL) {
+        while ((ent = readdir (dir)) != NULL) {
+            htmlStream << "<li>" << ent->d_name << "</li>";
+        }
+        closedir (dir);
+    } else {
+        perror ("ERROR: could not find directory");
+        return;
+    }
+    htmlStream << "</ul>";
+
     ostringstream& os = res.getOutputStream();
-    // os << is.str();
     os << "HTTP/1.1 200 OK\r\n" <<
         "Content-Type: text/html\r\n" <<
-            "Content-Length: " << t.length() << "\r\n" <<
+            "Content-Length: " << htmlStream.str().length() << "\r\n" <<
                 "\r\n";
-    os << t << endl;
-    return;
-
-    string line;
-    string contentType;
-    string boundary;
-    int contentLength;
-
-    while (getline(is, line) && !line.empty() && line != "\r") {
-        // cout << "line: " << line << endl;
-        istringstream lineStream(line);
-        string word;
-        lineStream >> word;
-        if (word == "Content-Type:") {
-            cout << "HIT CONTENT TYPE" << endl;
-            lineStream >> contentType;
-            lineStream >> boundary;
-        } else if (word == "Content-Length:") {
-            cout << "HIT CONTENT LENGTH" << endl;
-            lineStream >> contentLength;
-        }
-    }
-
-    bool inFileContent = false;
-    string caption;
-    string date;
-    while (getline(is, line) && !line.empty() && !inFileContent) {
-        cout << "line: " << line << endl;
-        istringstream lineStream(line);
-        string word;
-        lineStream >> word;
-        if (word == "Content-Disposition:") {
-            cout << "HIT CONTENT DISPOSITION" << endl;
-            lineStream >> word;
-            if (word == "form-data;") {
-                lineStream >> word;
-                auto pos = word.find('=');
-                string field = word.substr(pos + 2, word.length() - pos - 3);
-                cout << "field: " << field << endl;
-                getline(is, line);
-                getline(is, line);
-                if (field == "caption") {
-                    caption = line.substr(0, line.length() - 1);
-                } else if (field == "date") {
-                    date = line.substr(0, line.length() - 1);
-                } else if (field == "fileName\"") {
-                    cout << "HIT FILENAME" << endl;
-                    inFileContent = true;
-                }
-            }
-        }
-    }
-
-
-
-    // string test = is.str();
-    // cout << "file contents: " << endl;
-    // for (char &c : test) {
-    //     cout << "char: " << c << endl;
-    // }
-
-
-
-    // ostringstream& os = res.getOutputStream();
-    // os << "contentType: " << contentType <<
-    //     ", boundary: " << boundary <<
-    //         ", length: " << contentLength <<
-    //             ", caption: " << caption <<
-    //                 ", date: " << date <<
-    //                     "." << endl;
-    //
-    // os << "file contents: " << endl;
-
-
-
+    os << htmlStream.str() << endl;
 }

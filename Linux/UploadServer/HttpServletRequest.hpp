@@ -8,8 +8,6 @@ class HttpServletRequest {
   string caption;
   string date;
   string filename;
-  // char file[];
-  // int fileLength;
 
 public:
   HttpServletRequest(stringstream& is);
@@ -18,12 +16,8 @@ public:
   string getCaption();
   string getDate();
   string getFilename();
-  // char* getFile();
-  // int getFileLength();
 
   void setCaption(string caption);
   void setDate(string date);
   void setFilename(string filename);
-  // void setFile(char* file, int fileLength);
-  // void setFileLength(int length);
 };

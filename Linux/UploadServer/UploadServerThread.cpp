@@ -15,41 +15,23 @@ void UploadServerThread::run() {
     cout << "in UploadServerThread" << endl;
 
     // read request into string stream
-    stringstream is(socket.getRequest());
-    // stringstream is;
-    // socket.getRequest(is);
-    // is.seekg(0);
+    stringstream is(socket.getRequestLine());
     ostringstream os;
 
-    // Create HTTP stuff
-    // HttpServletRequest req(is);
+    HttpServletRequest req(is);
     HttpServletResponse res(os);
-    // UploadServlet httpServlet;
 
-    // while (more to read...???)
-    cout << "is.str(): " << is.str() << endl;
     string method;
     is >> method;
-    // is.seekg(0);
-    cout << "Method: " << method << endl;
-    // cout << "Method is GET: " << (method == "GET") << endl;
-
-    // use that to determine where to send next
     if (method == "GET") {
-        HttpServletRequest req(is);
-        // HttpServletResponse res(os);
+        // HttpServletRequest req(is);
         UploadServlet httpServlet;
         httpServlet.doGet(req, res);
-        // string test = res.getOutputStream().str();
-        // cout << test << endl;
     } else if (method == "POST") {
-        HttpServletRequest req(is);
+        // HttpServletRequest req(is);
         parseRequest(is, req);
-        // HttpServletResponse res(os);
         UploadServlet httpServlet;
         httpServlet.doPost(req, res);
-        // string test = res.getOutputStream().str();
-        // cout << test << endl;
     } else {
         string output = "Method not allowed";
         socket.sendResponse(&output[0]);
@@ -59,11 +41,9 @@ void UploadServerThread::run() {
 
     ostringstream& resStream = res.getOutputStream();
     string output = resStream.str();
-    // resStream.str("");
-
-    // char* t2 = &output[0];
     socket.sendResponse(&output[0]);
 
+    cout << "Shutting down socket..." << endl;
     shutdown(socket.getSock(), SHUT_RDWR);
 };
 
@@ -73,52 +53,46 @@ std::stringstream &UploadServerThread::parseRequest(stringstream& is, HttpServle
     string boundary;
     int contentLength;
 
-    while ((line = socket.getRequest()) != "\r\n") {
-        cout << "line: " << line;
+    // Get data from request headers
+    while ((line = socket.getRequestLine()) != "\r\n") {
         istringstream lineStream(line);
         string word;
         lineStream >> word;
         if (word == "Content-Type:") {
-            cout << "HIT CONTENT TYPE" << endl;
             lineStream >> contentType;
             lineStream >> boundary;
         } else if (word == "Content-Length:") {
-            cout << "HIT CONTENT LENGTH" << endl;
             lineStream >> contentLength;
         }
     }
 
-    cout << "BODY:" << endl;
-
+    // Get form data
     bool inFileContent = false;
     string caption;
     string date;
     string filename;
-    while (!(line = socket.getRequest()).empty() && !inFileContent) {
-        cout << line;
+    while (!(line = socket.getRequestLine()).empty() && !inFileContent) {
         contentLength -= line.length();
         istringstream lineStream(line);
         string word;
         lineStream >> word;
         if (word == "Content-Disposition:") {
-            cout << "HIT CONTENT DISPOSITION" << endl;
             lineStream >> word;
             if (word == "form-data;") {
                 lineStream >> word;
                 auto pos = word.find('=');
                 string field = word.substr(pos + 2, word.length() - pos - 3);
-                cout << "field: " << field << endl;
 
                 if (field == "caption") {
-                    line = socket.getRequest();
+                    line = socket.getRequestLine();
                     contentLength -= line.length();
-                    line = socket.getRequest();
+                    line = socket.getRequestLine();
                     contentLength -= line.length();
                     caption = line.substr(0, line.length() - 2);
                 } else if (field == "date") {
-                    line = socket.getRequest();
+                    line = socket.getRequestLine();
                     contentLength -= line.length();
-                    line = socket.getRequest();
+                    line = socket.getRequestLine();
                     contentLength -= line.length();
                     date = line.substr(0, line.length() - 2);
                 } else if (field == "fileName\"") {
@@ -133,68 +107,35 @@ std::stringstream &UploadServerThread::parseRequest(stringstream& is, HttpServle
         }
     }
 
-    cout << "contentLength: " << contentLength << endl;
-    cout << "line: " << line;
-
+    // Exclude current line (from final while check) and empty line before file content from file length
+    contentLength -= line.length();
+    line = socket.getRequestLine();
     contentLength -= line.length();
 
-    cout << "contentLength: " << contentLength << endl;
-
-    line = socket.getRequest();
-    contentLength -= line.length();
-
-    cout << "contentLength: " << contentLength << endl;
-    cout << "line: " << line;
-
+    // Exclude final boundary + four extra "-" + two line delimiting chars
     string boundaryLabel = "boundary=";
-    cout << "boundary length: " << boundary.length() - boundaryLabel.length();
-
-    // string boundaryLabel = "boundary=";
-    contentLength -= 2;
     contentLength -= (boundary.length() - boundaryLabel.length() + 4 + 2);
 
-    cout << "contentLength: " << contentLength << endl;
+    // Exclude two line delimiting chars
+    contentLength -= 2;
 
+    // Read only as many bytes from socket as contained in file content
     char *file = new char[contentLength + 1];
-
     int fileBytes = socket.getReqFile(file, contentLength);
-
-    cout << "!" << endl;
-
     if (fileBytes < contentLength) {
-        cout << "wrong num bytes" << endl;
+        cout << "ERROR: incorrect file content length" << endl;
     }
-
     file[contentLength] = '\0';
 
+    // Write file content into stream
     is.str("");
-    // is << "caption: " << caption << "\n";
-    // is << "date: " << date << "\n";
-    // is << "file:\n";
-
-    // is << file;
-
     for (int i = 0; i < contentLength; i++) {
-        cout << file[i];
         is.write(file + i, 1);
     }
-
-    cout << "contentType: " << contentType <<
-        "\nboundary: " << boundary <<
-            "\nlength: " << contentLength <<
-                "\ncaption: " << caption <<
-                    "\ncaption length: " << caption.length() <<
-                    "\ndate: " << date <<
-                        "\ndate length: " << date.length() <<
-                        "\nfilename: " << filename <<
-                            "." << endl;
-
-    cout << "sample filename: " << caption << "_" << date << "_" << filename << endl;
 
     req.setCaption(caption);
     req.setDate(date);
     req.setFilename(filename);
-
 
     return is;
 }
