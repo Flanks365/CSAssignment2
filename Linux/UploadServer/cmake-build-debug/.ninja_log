@@ -1,0 +1,6 @@
+# ninja log v6
+12	84	7529660956172778	CMakeFiles/UploadServer.dir/Thread.cpp.obj	c20e2e738ee6e938
+1	187	7529734022661923	build.ninja	fd97c8e3e60100a8
+7	77	7529660956118706	CMakeFiles/UploadServer.dir/SimpleThread.cpp.obj	318ac5d46a4d9242
+21	281	7529654772809378	CMakeFiles/UploadServer.dir/UploadServerThread.cpp.obj	79c8b01284480ca8
+17	282	7529654772778715	CMakeFiles/UploadServer.dir/UploadServer.cpp.obj	9afa2c89350331d7

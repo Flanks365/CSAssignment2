@@ -1,0 +1,3 @@
+C:/cygwin64/home/Mike/assn-2b/UploadServer/cmake-build-debug/CMakeFiles/UploadServer.dir
+C:/cygwin64/home/Mike/assn-2b/UploadServer/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/cygwin64/home/Mike/assn-2b/UploadServer/cmake-build-debug/CMakeFiles/rebuild_cache.dir
