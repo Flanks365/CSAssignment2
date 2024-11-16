@@ -4,7 +4,7 @@
 #include <resolv.h>
 #include <unistd.h>
 #include <stdio.h>
-
+#include <iostream>
 
 
 ServerSocket::ServerSocket(int port)
@@ -27,6 +27,7 @@ ServerSocket::ServerSocket(int port)
 
 Socket* ServerSocket::Accept()
 {
+    std::cout<<"in accept()"<<std::endl;
 	sockaddr_in localAddr, remoteAddr;
 	int addrLen = sizeof (remoteAddr);
 	int cSock = accept(sock, (struct sockaddr *)&remoteAddr, &addrLen);

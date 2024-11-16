@@ -22,7 +22,7 @@ void UploadServlet::doGet(HttpServletRequest req, HttpServletResponse res) {
             "Content-Length: " << fileContent.length() << "\r\n" <<
                 "\r\n";
 
-    os << fileContent << endl;
+    os << fileContent << "\r\n";
 };
 
 void UploadServlet::doPost(HttpServletRequest req, HttpServletResponse res) {
@@ -39,7 +39,10 @@ void UploadServlet::doPost(HttpServletRequest req, HttpServletResponse res) {
     outFile.close();
 
     stringstream htmlStream;
-    htmlStream << "<ul>";
+    htmlStream << "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">" <<
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" <<
+        "<title>Uploads</title><link rel=\"stylesheet\" href=\"styles.css\"></head>" <<
+        "<body><h1>Uploads</h1><ul>";
     DIR *dir;
     struct dirent *ent;
     if ((dir = opendir (uploadsPath.c_str())) != NULL) {
@@ -51,12 +54,12 @@ void UploadServlet::doPost(HttpServletRequest req, HttpServletResponse res) {
         perror ("ERROR: could not find directory");
         return;
     }
-    htmlStream << "</ul>";
+    htmlStream << "</ul></body></html>";
 
     ostringstream& os = res.getOutputStream();
     os << "HTTP/1.1 200 OK\r\n" <<
         "Content-Type: text/html\r\n" <<
             "Content-Length: " << htmlStream.str().length() << "\r\n" <<
                 "\r\n";
-    os << htmlStream.str() << endl;
+    os << htmlStream.str() << "\r\n";
 }

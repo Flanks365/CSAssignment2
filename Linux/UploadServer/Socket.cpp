@@ -14,6 +14,7 @@ using namespace std;
 Socket::Socket(int sock)
 {
 	this->sock = sock;
+  cout<<"created socket "<<sock<<endl;
 }
 
 char* Socket::getRequest() {
@@ -66,36 +67,6 @@ int Socket::getReqFile(char *buf, int n) {
   return readn(sock, buf, n);
 }
 
-
-// int Socket::getRequest(stringstream& is)
-// {
-//   cout << "In getRequest(is)" << endl;
-//   int rval;
-//   char *buf = new char[1024];
-//
-//   // cout << "reading.." << endl;
-//   // if ((rval = read(sock, buf, 1024)) < 0){
-//   //   perror("reading socket");
-//   // }else  {
-//   //   cout << "printing..." << endl;
-//   //   printf("%s\n",buf);
-//   // }
-//
-//   cout << "going to read" << endl;
-//   while ((rval = read(sock, buf, 100))) {
-//     if (rval != 100)
-//       break;
-//   }
-//
-//
-//   if (rval  < 0) {
-//     perror("reading socket");
-//   }
-//
-//   delete buf;
-//   return 0;
-// }
-
 int Socket::readn(int fd, void* buf, int n) {
   int nread;
   char *p = (char *)buf;
@@ -127,6 +98,11 @@ void Socket::sendResponse(char *res){
 
 int Socket::getSock() {
   return sock;
+}
+
+void Socket::closeSocket() {
+  cout<<"closing socket "<<sock<<endl;
+  close(sock);
 }
 
 Socket::~Socket()

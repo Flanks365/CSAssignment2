@@ -4,10 +4,10 @@
 #include "Thread.h"
 
 class UploadServerThread : public Thread {
-    Socket socket;
+    Socket* socket;
 
 public:
-    UploadServerThread(Socket socket);
+    UploadServerThread(Socket* socket);
 
     void run();
 

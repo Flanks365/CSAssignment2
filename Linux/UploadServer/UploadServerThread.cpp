@@ -9,13 +9,13 @@
 
 using namespace std;
 
-UploadServerThread::UploadServerThread(Socket socket) : Thread(this), socket(socket) {};
+UploadServerThread::UploadServerThread(Socket* socket) : Thread(this), socket(socket) {};
 
 void UploadServerThread::run() {
     cout << "in UploadServerThread" << endl;
 
     // read request into string stream
-    stringstream is(socket.getRequestLine());
+    stringstream is(socket->getRequestLine());
     ostringstream os;
 
     HttpServletRequest req(is);
@@ -34,17 +34,21 @@ void UploadServerThread::run() {
         httpServlet.doPost(req, res);
     } else {
         string output = "Method not allowed";
-        socket.sendResponse(&output[0]);
-        shutdown(socket.getSock(), SHUT_RDWR);
+        socket->sendResponse(&output[0]);
+        cout << "Shutting down socket..." << endl;
+        socket->closeSocket();
+        delete socket;
         return;
     }
 
     ostringstream& resStream = res.getOutputStream();
     string output = resStream.str();
-    socket.sendResponse(&output[0]);
+    socket->sendResponse(&output[0]);
 
     cout << "Shutting down socket..." << endl;
-    shutdown(socket.getSock(), SHUT_RDWR);
+    shutdown(socket->getSock(), SHUT_WR);
+    socket->closeSocket();
+    delete socket;
 };
 
 std::stringstream &UploadServerThread::parseRequest(stringstream& is, HttpServletRequest& req) {
@@ -54,7 +58,7 @@ std::stringstream &UploadServerThread::parseRequest(stringstream& is, HttpServle
     int contentLength;
 
     // Get data from request headers
-    while ((line = socket.getRequestLine()) != "\r\n") {
+    while ((line = socket->getRequestLine()) != "\r\n") {
         istringstream lineStream(line);
         string word;
         lineStream >> word;
@@ -71,7 +75,7 @@ std::stringstream &UploadServerThread::parseRequest(stringstream& is, HttpServle
     string caption;
     string date;
     string filename;
-    while (!(line = socket.getRequestLine()).empty() && !inFileContent) {
+    while (!(line = socket->getRequestLine()).empty() && !inFileContent) {
         contentLength -= line.length();
         istringstream lineStream(line);
         string word;
@@ -84,23 +88,28 @@ std::stringstream &UploadServerThread::parseRequest(stringstream& is, HttpServle
                 string field = word.substr(pos + 2, word.length() - pos - 3);
 
                 if (field == "caption") {
-                    line = socket.getRequestLine();
+                    line = socket->getRequestLine();
                     contentLength -= line.length();
-                    line = socket.getRequestLine();
+                    line = socket->getRequestLine();
                     contentLength -= line.length();
                     caption = line.substr(0, line.length() - 2);
                 } else if (field == "date") {
-                    line = socket.getRequestLine();
+                    line = socket->getRequestLine();
                     contentLength -= line.length();
-                    line = socket.getRequestLine();
+                    line = socket->getRequestLine();
                     contentLength -= line.length();
                     date = line.substr(0, line.length() - 2);
-                } else if (field == "fileName\"") {
-                    cout << "HIT FILENAME" << endl;
+                } else if (field == "fileName\"" || field == "file\"") {
                     lineStream >> word;
                     pos = word.find('=');
                     filename = word.substr(pos + 2, word.length() - pos - 3);
-                    cout << "filename: " << filename << endl;
+                    auto pos = filename.find('.');
+                    string fileExtension = filename.substr(pos + 1, word.length() - pos - 1);
+
+                    // Correction for bug where text files from java console are missing last two chars
+                    if (field == "file\"" && fileExtension == "txt") {
+                        contentLength += 2;
+                    }
                     inFileContent = true;
                 }
             }
@@ -109,7 +118,7 @@ std::stringstream &UploadServerThread::parseRequest(stringstream& is, HttpServle
 
     // Exclude current line (from final while check) and empty line before file content from file length
     contentLength -= line.length();
-    line = socket.getRequestLine();
+    line = socket->getRequestLine();
     contentLength -= line.length();
 
     // Exclude final boundary + four extra "-" + two line delimiting chars
@@ -121,7 +130,7 @@ std::stringstream &UploadServerThread::parseRequest(stringstream& is, HttpServle
 
     // Read only as many bytes from socket as contained in file content
     char *file = new char[contentLength + 1];
-    int fileBytes = socket.getReqFile(file, contentLength);
+    int fileBytes = socket->getReqFile(file, contentLength);
     if (fileBytes < contentLength) {
         cout << "ERROR: incorrect file content length" << endl;
     }
