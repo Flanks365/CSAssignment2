@@ -29,7 +29,7 @@ Socket* ServerSocket::Accept()
 {
     std::cout<<"in accept()"<<std::endl;
 	sockaddr_in localAddr, remoteAddr;
-	int addrLen = sizeof (remoteAddr);
+	socklen_t addrLen = sizeof (remoteAddr);
 	int cSock = accept(sock, (struct sockaddr *)&remoteAddr, &addrLen);
 	Socket *cs = new Socket(cSock);
 	return cs;
